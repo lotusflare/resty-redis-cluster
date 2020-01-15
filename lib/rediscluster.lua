@@ -115,9 +115,25 @@ local function try_hosts_slots(self, serv_list)
     for i = 1, #serv_list do
         local ip = serv_list[i].ip
         local port = serv_list[i].port
+        local options_table = {}
+
+        for _, redis_connect_option in ipairs({
+                    "ssl",
+                    "ssl_verify",
+                    "server_name",
+                    "pool",
+                    "pool_size",
+                    "backlog"
+                }) do
+            if (serv_list[i][redis_connect_option]) then
+                redis_connect_option[redis_connect_option]
+                    = serv_list[i][redis_connect_option]
+            end
+        end
+
         local redis_client = redis:new()
         redis_client:set_timeout(config.connection_timout or DEFAULT_CONNECTION_TIMEOUT)
-        local ok, err = redis_client:connect(ip, port)
+        local ok, err = redis_client:connect(ip, port, options_table)
         if ok then
             local authok, autherr = checkAuth(self, redis_client)
             if autherr then
@@ -227,7 +243,7 @@ function _M.new(self, config)
     if not config.serv_list or #config.serv_list < 1 then
         return nil, " redis cluster config serv_list is empty"
     end
-    
+
 
     local inst = { config = config }
     inst = setmetatable(inst, mt)
