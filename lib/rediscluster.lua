@@ -13,12 +13,17 @@ local math = math
 local rawget = rawget
 local pairs = pairs
 local unpack = unpack
+local redis_connection_optional_params = {}
 
 
 local DEFAULT_MAX_REDIRECTION = 5
 local DEFAULT_KEEPALIVE_TIMEOUT = 55000
 local DEFAULT_KEEPALIVE_CONS = 1000
 local DEFAULT_CONNECTION_TIMEOUT = 1000
+
+
+
+
 
 
 ffi.cdef [[
@@ -115,25 +120,10 @@ local function try_hosts_slots(self, serv_list)
     for i = 1, #serv_list do
         local ip = serv_list[i].ip
         local port = serv_list[i].port
-        local options_table = {}
-
-        for _, redis_connect_option in ipairs({
-                    "ssl",
-                    "ssl_verify",
-                    "server_name",
-                    "pool",
-                    "pool_size",
-                    "backlog"
-                }) do
-            if (serv_list[i][redis_connect_option]) then
-                redis_connect_option[redis_connect_option]
-                    = serv_list[i][redis_connect_option]
-            end
-        end
 
         local redis_client = redis:new()
         redis_client:set_timeout(config.connection_timout or DEFAULT_CONNECTION_TIMEOUT)
-        local ok, err = redis_client:connect(ip, port, options_table)
+        local ok, err = redis_client:connect(ip, port, redis_connection_optional_params)
         if ok then
             local authok, autherr = checkAuth(self, redis_client)
             if autherr then
@@ -244,6 +234,19 @@ function _M.new(self, config)
         return nil, " redis cluster config serv_list is empty"
     end
 
+    for _, redis_connect_option in ipairs({
+                "ssl",
+                "ssl_verify",
+                "server_name",
+                "pool",
+                "pool_size",
+                "backlog"
+            }) do
+        if (serv_list[i][redis_connect_option]) then
+            redis_connection_optional_params[redis_connect_option]
+                = serv_list[i][redis_connect_option]
+        end
+    end
 
     local inst = { config = config }
     inst = setmetatable(inst, mt)
@@ -375,7 +378,7 @@ local function handleCommandWithRetry(self, targetIp, targetPort, asking, cmd, k
 
         local redis_client = redis:new()
         redis_client:set_timeout(config.connection_timout or DEFAULT_CONNECTION_TIMEOUT)
-        local ok, connerr = redis_client:connect(ip, port)
+        local ok, connerr = redis_client:connect(ip, port, redis_connection_optional_params)
 
         if ok then
             local authok, autherr = checkAuth(self, redis_client)
@@ -602,7 +605,7 @@ function _M.commit_pipeline(self)
         local slave = v.slave
         local redis_client = redis:new()
         redis_client:set_timeout(config.connection_timout or DEFAULT_CONNECTION_TIMEOUT)
-        local ok, err = redis_client:connect(ip, port)
+        local ok, err = redis_client:connect(ip, port, redis_connection_optional_params)
 
         local authok, autherr = checkAuth(self, redis_client)
         if autherr then
