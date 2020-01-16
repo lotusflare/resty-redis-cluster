@@ -13,6 +13,7 @@ local math = math
 local rawget = rawget
 local pairs = pairs
 local unpack = unpack
+
 local redis_connection_optional_params = {}
 
 
@@ -242,9 +243,9 @@ function _M.new(self, config)
                 "pool_size",
                 "backlog"
             }) do
-        if (serv_list[i][redis_connect_option]) then
-            redis_connection_optional_params[redis_connect_option]
-                = serv_list[i][redis_connect_option]
+        if (config[redis_connect_option]) then
+            self.redis_connection_optional_params[redis_connect_option]
+                = config[redis_connect_option]
         end
     end
 
