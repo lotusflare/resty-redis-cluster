@@ -16,6 +16,8 @@ local tonumber = tonumber
 local match = string.match
 local char = string.char
 
+local redis_connection_optional_params = {}
+
 
 local DEFAULT_SHARED_DICT_NAME = "redis_cluster_slot_locks"
 local DEFAULT_MAX_REDIRECTION = 5
@@ -102,6 +104,7 @@ local function try_hosts_slots(self, serv_list)
     for i = 1, #serv_list do
         local ip = serv_list[i].ip
         local port = serv_list[i].port
+
         local redis_client = redis:new()
         local ok, err
         redis_client:set_timeout(config.connection_timeout or
@@ -110,7 +113,7 @@ local function try_hosts_slots(self, serv_list)
 
         --attempt to connect DEFAULT_MAX_CONNECTION_ATTEMPTS times to redis
         for k = 1, config.max_connection_attempts or DEFAULT_MAX_CONNECTION_ATTEMPTS do
-            ok, err = redis_client:connect(ip, port)
+            ok, err = redis_client:connect(ip, port, redis_connection_optional_params)
             if ok then break end
             if err then
                 ngx.log(ngx.ERR,"unable to connect, attempt nr ", k, " : error: ", err)
@@ -263,6 +266,19 @@ function _M.new(self, config)
         return nil, " redis cluster config serv_list is empty"
     end
 
+    for _, redis_connect_option in ipairs({
+                "ssl",
+                "ssl_verify",
+                "server_name",
+                "pool",
+                "pool_size",
+                "backlog"
+            }) do
+        if (config[redis_connect_option]) then
+            self.redis_connection_optional_params[redis_connect_option]
+                = config[redis_connect_option]
+        end
+    end
 
     local inst = { config = config }
     inst = setmetatable(inst, mt)
@@ -396,7 +412,7 @@ local function handleCommandWithRetry(self, targetIp, targetPort, asking, cmd, k
         redis_client:set_timeout(config.connection_timeout or
                                  config.connection_timout  or
                                  DEFAULT_CONNECTION_TIMEOUT)
-        local ok, connerr = redis_client:connect(ip, port)
+        local ok, connerr = redis_client:connect(ip, port, redis_connection_optional_params)
 
         if ok then
             local authok, autherr = checkAuth(self, redis_client)
@@ -650,7 +666,7 @@ function _M.commit_pipeline(self)
         redis_client:set_timeout(config.connection_timeout or
                                  config.connection_timout  or
                                  DEFAULT_CONNECTION_TIMEOUT)
-        local ok, err = redis_client:connect(ip, port)
+        local ok, err = redis_client:connect(ip, port, redis_connection_optional_params)
 
         local authok, autherr = checkAuth(self, redis_client)
         if autherr then
