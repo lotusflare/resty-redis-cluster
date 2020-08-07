@@ -43,9 +43,10 @@ While building the client, thanks for https://github.com/cuiweixie/lua-resty-red
 
 ### installation
 
-1. please compile and generate redis_slot.so from redis_slot.c (can done by gcc)
+1. please compile and generate librestyredisslot.so from redis_slot.c (can done by gcc)
 
-2. please add redis_slot.so and rediscluster.lua at lualib, Also please add library:lua-resty-redis and lua-resty-lock
+2. please add xmodem.lua and rediscluster.lua at lualib, Also please add library:lua-resty-redis and lua-resty-lock
+   
    nginx.conf like:
 
    lua_package_path "/path/lualib/?.lua;";
@@ -61,6 +62,7 @@ While building the client, thanks for https://github.com/cuiweixie/lua-resty-red
 
 ```lua
 local config = {
+    dict_name = "test_locks",               --shared dictionary name for locks
     name = "testCluster",                   --rediscluster name
     serv_list = {                           --redis cluster node list(host and port),
         { ip = "127.0.0.1", port = 7001 },
@@ -72,8 +74,9 @@ local config = {
     },
     keepalive_timeout = 60000,              --redis connection pool idle timeout
     keepalive_cons = 1000,                  --redis connection pool size
-    connection_timout = 1000,               --timeout while connecting
+    connection_timeout = 1000,              --timeout while connecting
     max_redirection = 5,                    --maximum retry attempts for redirection
+    max_connection_attempts = 1             --maximum retry attempts for connection
 }
 
 local redis_cluster = require "rediscluster"
@@ -101,8 +104,9 @@ local config = {
     },
     keepalive_timeout = 60000,              --redis connection pool idle timeout
     keepalive_cons = 1000,                  --redis connection pool size
-    connection_timout = 1000,               --timeout while connecting
+    connection_timeout = 1000,              --timeout while connecting
     max_redirection = 5,                    --maximum retry attempts for redirection,
+    max_connection_attempts = 1,            --maximum retry attempts for connection
     auth = "pass"                           --set password while setting auth
 }
 
@@ -134,8 +138,9 @@ local config = {
     },
     keepalive_timeout = 60000,
     keepalive_cons = 1000,
-    connection_timout = 1000,
-    max_redirection = 5
+    connection_timeout = 1000,
+    max_redirection = 5,
+    max_connection_attempts = 1
 }
 
 local redis_cluster = require "rediscluster"
@@ -180,8 +185,9 @@ local config = {
     },
     keepalive_timeout = 60000,
     keepalive_cons = 1000,
-    connection_timout = 1000,
-    max_redirection = 5
+    connection_timeout = 1000,
+    max_redirection = 5,
+    max_connection_attempts = 1
 }
 
 local redis_cluster = require "rediscluster"
@@ -212,8 +218,9 @@ local config = {
     },
     keepalive_timeout = 60000,
     keepalive_cons = 1000,
-    connection_timout = 1000,
-    max_redirection = 5
+    connection_timeout = 1000,
+    max_redirection = 5,
+    max_connection_attempts = 1
 }
 
 local redis_cluster = require "rediscluster"
@@ -249,8 +256,9 @@ local config = {
     },
     keepalive_timeout = 60000,              --redis connection pool idle timeout
     keepalive_cons = 1000,                  --redis connection pool size
-    connection_timout = 1000,               --timeout while connecting
+    connection_timeout = 1000,              --timeout while connecting
     max_redirection = 5,                    --maximum retry attempts for redirection
+    max_connection_attempts = 1             --maximum retry attempts for connection
 }
 
 local redis_cluster = require "rediscluster"
@@ -293,4 +301,3 @@ Redistributions of source code must retain the above copyright notice, this list
 Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
